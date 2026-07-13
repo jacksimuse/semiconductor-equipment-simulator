@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d3ed92a549c2ee4e8af166450c567a2, type: 3}
+  m_Name: AlignerDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::DigitalTwin.Stations.StationDefinition
+  id: aligner
+  displayName: "\uC6E8\uC774\uD37C \uC5BC\uB77C\uC774\uB108"
+  description: "\uC6E8\uC774\uD37C \uB178\uCE58\uB97C \uBAA9\uD45C \uBC29\uD5A5\uC73C\uB85C
+    \uC815\uB82C\uD55C\uB2E4."
+  controlPrefab: {fileID: 9181333107302241976, guid: 4e61518f3a2cc2c44885c6975f694f24, type: 3}
+  thumbnail: {fileID: 0}
+  missionIds: []

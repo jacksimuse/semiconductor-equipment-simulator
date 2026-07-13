@@ -1,11 +1,22 @@
 # 게임형 교육 시뮬레이터 — 확장 계획서 (경험 레이어)
 
-> 기존 "6축 로봇 제어"를 **탐험형 교육 게임**으로 확장한다.
+> 기존 "6축 로봇 제어"를 **반도체 장비 회사 탐험형 교육 게임**으로 확장한다.
 > 학생이 로그인 → 캐릭터로 클린룸을 걸어다니며 → 장비에 다가가면
 > "장비를 제어하시겠습니까?" 프롬프트 → 확인 시 **해당 장비의 제어 모드**로 진입.
 > 마치 게임처럼 미션을 수행하고 평가받는 구조.
 >
 > **핵심 설계 목표: 장비(스테이션)를 계속 추가할 수 있는 데이터-드리븐 확장 구조.**
+
+---
+
+## 0. 담당 범위
+
+- **Codex:** 회사 세계관, 온보딩 흐름, 탐험/상호작용/미션/평가 경험, `Assets/Onboarding/**` 코드와 데이터.
+- **Claude Code:** 반도체 장비, 로봇, 제어, 통신, 실제 장비 연동, `Assets/DigitalTwin/**` 장비 코드와 Unity MCP 씬 검증.
+- **연동 방식:** Codex는 장비 내부 구현을 직접 만지지 않고, Claude Code가 제공하는 스테이션 API와 상태값을 이용해 교육 경험을 만든다.
+- **장비 계약:** `Assets/DigitalTwin/StationContract/`의 `StationDefinition`, `StationRegistry`, `StationBase`, `StationStatus`를 읽고 사용만 한다. 계약 수정은 Claude Code에 요청한다.
+
+상위 세계관 기준은 [WORLD_BUILDING_PLAN.md](WORLD_BUILDING_PLAN.md)를 따른다.
 
 ---
 

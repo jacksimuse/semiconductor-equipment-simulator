@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using DigitalTwin.Comms;
+using DigitalTwin.Comms.Secs;
 
 namespace DigitalTwin
 {
@@ -82,6 +84,11 @@ namespace DigitalTwin
             safety.ik    = ik;
             int obLayer  = LayerMask.NameToLayer("Obstacle");
             safety.obstacleMask = obLayer >= 0 ? (1 << obLayer) : 0;
+
+            // Phase 5 — 통신 토대: 메인스레드 디스패처 + 백엔드 링크(기본 Simulator).
+            root.AddComponent<MainThreadDispatcher>();
+            root.AddComponent<EquipmentLink>();
+            root.AddComponent<GemEquipment>();   // Phase 5b — 가상 GEM 장비(HSMS:5000)
 
             Selection.activeGameObject = root;
             EditorSceneManager.MarkSceneDirty(root.scene);
