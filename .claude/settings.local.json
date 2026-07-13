@@ -1,0 +1,13 @@
+﻿{
+    "permissions":  {
+                        "allow":  [
+                                      "mcp__UnityMCP__manage_gameobject",
+                                      "Bash(python -m pip --version)",
+                                      "Read(//c/Program Files/Unity Hub/**)",
+                                      "Read(//c/Program Files/Unity/Hub/**)",
+                                      "Read(//d/Unity/Hub/**)",
+                                      "Read(//d/Program Files/Unity/Hub/**)",
+                                      "Read(//c/Users/硫붿뭅?몃줈?됱뒪/AppData/Roaming/UnityHub/**)"
+                                  ]
+                    }
+}
