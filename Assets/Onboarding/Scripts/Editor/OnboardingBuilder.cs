@@ -371,6 +371,8 @@ namespace Onboarding.EditorTools
             controller.center = Vector3.zero;
 
             player.AddComponent<EngineerPlayerController>();
+            var avatar = player.AddComponent<PlayerImageAvatar>();
+            avatar.portraitTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/플레이어.png");
             CreateHardHat(player.transform);
             return player;
         }

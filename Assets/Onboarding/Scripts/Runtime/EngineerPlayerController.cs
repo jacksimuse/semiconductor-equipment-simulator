@@ -21,6 +21,9 @@ namespace Onboarding
             controller = GetComponent<CharacterController>();
             if (cameraTransform == null && Camera.main != null)
                 cameraTransform = Camera.main.transform;
+
+            if (GetComponent<PlayerImageAvatar>() == null)
+                gameObject.AddComponent<PlayerImageAvatar>();
         }
 
         void Update()

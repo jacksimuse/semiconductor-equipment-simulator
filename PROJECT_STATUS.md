@@ -2,7 +2,7 @@
 
 > 두 에이전트가 번갈아 작업할 때 **받는 쪽이 먼저 읽는 문서.**
 > 작업을 넘길 때마다 이 문서를 갱신한다. 상세 규칙은 [UNITY_MCP_GUIDE.md](UNITY_MCP_GUIDE.md).
-> 최종 갱신: 2026-07-13 (Claude — RobotStation 어댑터 완료)
+> 최종 갱신: 2026-07-13 (Codex — 온보딩 UI/플레이어 이미지 표시 정리)
 
 ---
 
@@ -63,9 +63,18 @@
     - Customer Demo Hall: 김태준 매니저
 - `OnboardingBuilder`는 씬을 다시 빌드할 때 위 캐릭터 이미지를 자동 참조함.
 - `FacilityGuideHud`는 씬 참조가 비어 있어도 Editor Play에서 `Assets/*.png`를 fallback 로딩함.
+- 플레이어 표시 방식 변경:
+  - 기존 파란 Capsule은 `CharacterController`/충돌용으로 유지하되 렌더러를 숨김.
+  - `PlayerImageAvatar`가 `Assets/플레이어.png`를 읽어 `PlayerImageBillboard` Quad로 표시.
+  - 카메라를 향하는 2.5D 빌보드 캐릭터 방식.
+  - `EngineerPlayerController`가 `PlayerImageAvatar`가 없으면 자동 추가하므로 기존 씬에서도 Play 시 적용됨.
+- 미션/가이드 UI 추가 조정:
+  - 중앙 가이드 팝업과 알림/미션 팝업을 더 크게 확대.
+  - GUI hover/active/focused 상태의 글자색을 고정해 마우스를 올려도 글자가 흐려지지 않도록 처리.
+  - 오브젝트 위 월드 라벨은 플레이어가 가까이 가면 자동으로 숨김(`FacilityLabelBillboard.hideDistance`).
 - 최근 Unity 검증:
   - 이전 단계에서 `Onboarding.unity` 씬 검증 통과 및 Play 진입 후 콘솔 error/warning 0개 확인.
-  - 캐릭터 이미지 표시/깜빡임 방지 변경 이후에는 아직 Play 검증 전.
+  - 플레이어 이미지 빌보드/팝업 확대/라벨 거리 숨김 변경 이후에는 아직 Play 검증 전.
 
 ---
 
@@ -76,6 +85,9 @@
 3. Claude가 Play 검증할 때 확인할 항목:
    - Onboarding 씬에서 HUD 텍스트 깜빡임이 사라졌는지.
    - 미션 팝업 왼쪽에 캐릭터 이미지가 표시되는지.
+   - 플레이어가 파란 Capsule 대신 `플레이어.png` 빌보드 캐릭터로 보이는지.
+   - 중앙 미션 팝업에 마우스를 올려도 글자색이 바뀌어 흐려지지 않는지.
+   - 오브젝트 위 라벨이 가까이 접근하면 숨겨지는지.
    - `E`로 장비 제어 모드 진입, `Esc`/`Backspace`로 캐릭터 조작 복귀가 유지되는지.
    - 키오스크 본체 통과가 막히고 Trigger 영역에서만 상호작용 안내가 뜨는지.
 

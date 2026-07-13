@@ -117,15 +117,15 @@ namespace Onboarding
 
         void DrawGuidePanel()
         {
-            float width = Mathf.Min(1120f, Screen.width - 64f);
-            float height = Mathf.Min(460f, Screen.height - 96f);
-            height = Mathf.Max(height, Mathf.Min(360f, Screen.height - 48f));
+            float width = Mathf.Min(1320f, Screen.width - 40f);
+            float height = Mathf.Min(620f, Screen.height - 64f);
+            height = Mathf.Max(height, Mathf.Min(460f, Screen.height - 40f));
             var rect = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
             GUI.Box(rect, GUIContent.none, panelStyle);
 
-            const float buttonWidth = 86f;
-            const float buttonHeight = 42f;
-            const float buttonGap = 10f;
+            const float buttonWidth = 104f;
+            const float buttonHeight = 48f;
+            const float buttonGap = 12f;
             float buttonY = rect.yMax - buttonHeight - 18f;
 
             var closeRect = new Rect(rect.xMax - buttonWidth - 20f, buttonY, buttonWidth, buttonHeight);
@@ -156,16 +156,16 @@ namespace Onboarding
                 guidePage = 0;
             }
 
-            var portraitRect = new Rect(rect.x + 24f, rect.y + 24f, 210f, rect.height - 98f);
+            var portraitRect = new Rect(rect.x + 28f, rect.y + 28f, 270f, rect.height - 114f);
             DrawGuidePortrait(portraitRect);
 
-            var namePlateRect = new Rect(portraitRect.x + 18f, portraitRect.yMax - 46f, portraitRect.width - 36f, 34f);
+            var namePlateRect = new Rect(portraitRect.x + 20f, portraitRect.yMax - 52f, portraitRect.width - 40f, 38f);
             GUI.Box(namePlateRect, ActiveGuideName(), nameplateStyle);
 
-            var speechRect = new Rect(portraitRect.xMax + 24f, rect.y + 24f, rect.xMax - portraitRect.xMax - 48f, rect.height - 98f);
+            var speechRect = new Rect(portraitRect.xMax + 28f, rect.y + 28f, rect.xMax - portraitRect.xMax - 56f, rect.height - 114f);
             GUI.Box(speechRect, GUIContent.none, speechStyle);
-            GUI.Label(new Rect(speechRect.x + 24f, speechRect.y + 22f, speechRect.width - 48f, speechRect.height - 64f), pages[Mathf.Clamp(guidePage, 0, pages.Length - 1)], bodyStyle);
-            GUI.Label(new Rect(speechRect.xMax - 120f, speechRect.yMax - 36f, 96f, 26f), $"{guidePage + 1}/{pages.Length}", smallStyle);
+            GUI.Label(new Rect(speechRect.x + 30f, speechRect.y + 28f, speechRect.width - 60f, speechRect.height - 76f), pages[Mathf.Clamp(guidePage, 0, pages.Length - 1)], bodyStyle);
+            GUI.Label(new Rect(speechRect.xMax - 132f, speechRect.yMax - 40f, 108f, 28f), $"{guidePage + 1}/{pages.Length}", smallStyle);
         }
 
         void DrawGuidePortrait(Rect rect)
@@ -245,19 +245,19 @@ namespace Onboarding
 
         void DrawMissionPanel()
         {
-            float width = Mathf.Min(620f, Screen.width - 48f);
-            float height = Mathf.Min(430f, Screen.height - 128f);
-            var rect = new Rect(Screen.width - width - 24f, 84f, width, height);
+            float width = Mathf.Min(980f, Screen.width - 48f);
+            float height = Mathf.Min(620f, Screen.height - 96f);
+            var rect = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
             GUI.Box(rect, GUIContent.none, panelStyle);
 
-            if (GUI.Button(new Rect(rect.xMax - 82f, rect.y + 12f, 64f, 34f), "닫기", buttonStyle))
+            if (GUI.Button(new Rect(rect.xMax - 124f, rect.y + 18f, 96f, 44f), "닫기", buttonStyle))
                 showMissionPanel = false;
 
-            GUI.Label(new Rect(rect.x + 18f, rect.y + 16f, rect.width - 112f, 34f), "현재 진행중인 미션", headerStyle);
+            GUI.Label(new Rect(rect.x + 28f, rect.y + 22f, rect.width - 168f, 44f), "현재 진행중인 미션", headerStyle);
 
             string body = $"목적지: {CurrentDestination}\n현재 위치: {currentZoneName}\n해야 할 일: {CurrentTaskTitle()}\n\n상세 안내:\n{currentGuideText}\n\n핵심 요약:\n{CurrentTaskSummary()}\n\n{BuildTaskList()}";
-            var viewRect = new Rect(rect.x + 18f, rect.y + 62f, rect.width - 36f, rect.height - 82f);
-            float contentHeight = Mathf.Max(rect.height + 260f, 680f + tasks.Length * 32f);
+            var viewRect = new Rect(rect.x + 28f, rect.y + 84f, rect.width - 56f, rect.height - 112f);
+            float contentHeight = Mathf.Max(rect.height + 320f, 780f + tasks.Length * 38f);
             var contentRect = new Rect(0f, 0f, viewRect.width - 24f, contentHeight);
             missionScroll = GUI.BeginScrollView(viewRect, missionScroll, contentRect);
             GUI.Label(new Rect(0f, 0f, contentRect.width, contentRect.height), body, smallStyle);
@@ -350,45 +350,63 @@ namespace Onboarding
             nameplateStyle = new GUIStyle(GUI.skin.box)
             {
                 alignment = TextAnchor.MiddleCenter,
-                fontSize = 22,
+                fontSize = 24,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = Color.white, background = MakeTex(new Color(0.25f, 0.28f, 0.30f, 0.95f)) }
             };
+            SetAllTextColors(nameplateStyle, Color.white);
 
             headerStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 30,
+                fontSize = 34,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = Color.white }
             };
+            SetAllTextColors(headerStyle, Color.white);
 
             bodyStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 27,
+                fontSize = 31,
                 wordWrap = true,
                 normal = { textColor = new Color(0.08f, 0.10f, 0.12f) }
             };
+            SetAllTextColors(bodyStyle, new Color(0.08f, 0.10f, 0.12f));
 
             smallStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 22,
+                fontSize = 26,
                 wordWrap = true,
                 normal = { textColor = new Color(0.92f, 0.98f, 1f) }
             };
+            SetAllTextColors(smallStyle, new Color(0.92f, 0.98f, 1f));
 
             bannerStyle = new GUIStyle(GUI.skin.box)
             {
                 alignment = TextAnchor.MiddleCenter,
-                fontSize = 34,
+                fontSize = 36,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = Color.white, background = MakeTex(new Color(0.0f, 0.55f, 0.75f, 0.88f)) }
             };
+            SetAllTextColors(bannerStyle, Color.white);
 
             buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 22,
+                fontSize = 24,
                 fontStyle = FontStyle.Bold
             };
+            SetAllTextColors(buttonStyle, Color.white);
+        }
+
+        static void SetAllTextColors(GUIStyle style, Color color)
+        {
+            style.normal.textColor = color;
+            style.hover.textColor = color;
+            style.active.textColor = color;
+            style.focused.textColor = color;
+            style.onNormal.textColor = color;
+            style.onHover.textColor = color;
+            style.onActive.textColor = color;
+            style.onFocused.textColor = color;
         }
 
         static Texture2D MakeTex(Color color)
