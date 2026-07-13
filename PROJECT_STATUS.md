@@ -2,7 +2,7 @@
 
 > 두 에이전트가 번갈아 작업할 때 **받는 쪽이 먼저 읽는 문서.**
 > 작업을 넘길 때마다 이 문서를 갱신한다. 상세 규칙은 [UNITY_MCP_GUIDE.md](UNITY_MCP_GUIDE.md).
-> 최종 갱신: 2026-07-13 (Codex)
+> 최종 갱신: 2026-07-13 (Claude — RobotStation 어댑터 완료)
 
 ---
 
@@ -25,6 +25,7 @@
 **Station 프레임워크** (`StationContract/`, `Stations/`)
 - 계약: `StationBase` · `StationDefinition` · `StationRegistry` · `StationStatus`(+`Command(verb)`) — **동결**
 - **웨이퍼 얼라이너** (`Stations/Aligner/`): `Aligner.prefab` + `AlignerDefinition.asset`. 노치 정렬 검증됨.
+- **6축 로봇 스테이션** (`Stations/Robot/`): `RobotStation`(어댑터) + `RobotDefinition.asset`. verb: StartCycle/StopCycle/ResetEStop/Home. 계약 API(GetStatus/Command/Enter/Exit) 검증됨. 로봇 루트(DigitalTwin.unity)에 부착. **접근**: 로봇은 씬 기반이라 controlPrefab=null → 셸은 DigitalTwin.unity 를 additive 로드해 `RobotStation`(id="robot") 사용.
 
 ### E-트랙 — 세계관 (Codex, `Assets/Onboarding/**`, `Onboarding.unity`)
 - `WORLD_BUILDING_PLAN.md` 기준. JSM Semiconductor Equipment 세계관, 챕터 0~7, NPC, 시설 맵.
@@ -70,10 +71,8 @@
 
 ## 진행 중 / 다음 (Claude)
 
-1. **RobotStation 어댑터** (다음 우선) — 기존 로봇을 `StationBase`로 래핑.
-   `Command`: StartCycle/StopCycle/ResetEStop/Home. `GetStatus`: busy=IsRunning, eStop=SafetyMonitor.EStop, text=Status, lastEvent=SafetyMonitor.LastEvent.
-   → Codex의 M3 수직 슬라이스(걸어가서 로봇 제어) / Chapter 2 를 열어줌.
-2. 신규 장비: **로드포트/FOUP → 식각 챔버 → CMP → 계측기** (각 `Stations/<장비>/` 자체완결 모듈 + 어댑터).
+1. ✅ **RobotStation 어댑터 완료** — `Stations/Robot/RobotStation` + `RobotDefinition.asset`. verb StartCycle/StopCycle/ResetEStop/Home, GetStatus 매핑(busy/eStop/text/lastEvent)·Enter/Exit 검증됨. **Codex는 이제 Chapter 2 로봇 이송 미션을 붙일 수 있음**(접근: DigitalTwin.unity additive 로드 → RobotStation id="robot").
+2. 신규 장비(다음 우선): **로드포트/FOUP → 식각 챔버 → CMP → 계측기** (각 `Stations/<장비>/` 자체완결 모듈 + 어댑터).
 3. Claude가 Play 검증할 때 확인할 항목:
    - Onboarding 씬에서 HUD 텍스트 깜빡임이 사라졌는지.
    - 미션 팝업 왼쪽에 캐릭터 이미지가 표시되는지.

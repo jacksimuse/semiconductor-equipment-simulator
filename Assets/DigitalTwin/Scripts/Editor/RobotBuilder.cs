@@ -3,6 +3,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using DigitalTwin.Comms;
 using DigitalTwin.Comms.Secs;
+using DigitalTwin.Stations;
+using DigitalTwin.Stations.Robot;
 
 namespace DigitalTwin
 {
@@ -89,6 +91,11 @@ namespace DigitalTwin
             root.AddComponent<MainThreadDispatcher>();
             root.AddComponent<EquipmentLink>();
             root.AddComponent<GemEquipment>();   // Phase 5b — 가상 GEM 장비(HSMS:5000)
+
+            // Station 어댑터 + 정의 (게임 셸 연동). 참조는 RobotStation.Awake 에서도 자동 배선.
+            var station = root.AddComponent<RobotStation>();
+            station.robot = robot; station.ik = ik; station.safety = safety;
+            station.definition = EnsureRobotDefinition();
 
             Selection.activeGameObject = root;
             EditorSceneManager.MarkSceneDirty(root.scene);
@@ -271,6 +278,30 @@ namespace DigitalTwin
                 cap.center    = Vector3.zero;
             }
             return go;
+        }
+
+        /// <summary>로봇 스테이션 정의(SO) 생성/갱신. 로봇은 DigitalTwin.unity 씬 기반이라 controlPrefab 은 null.</summary>
+        static StationDefinition EnsureRobotDefinition()
+        {
+            const string path = "Assets/DigitalTwin/Stations/Robot/RobotDefinition.asset";
+            if (!AssetDatabase.IsValidFolder("Assets/DigitalTwin/Stations"))
+                AssetDatabase.CreateFolder("Assets/DigitalTwin", "Stations");
+            if (!AssetDatabase.IsValidFolder("Assets/DigitalTwin/Stations/Robot"))
+                AssetDatabase.CreateFolder("Assets/DigitalTwin/Stations", "Robot");
+
+            var def = AssetDatabase.LoadAssetAtPath<StationDefinition>(path);
+            if (def == null)
+            {
+                def = ScriptableObject.CreateInstance<StationDefinition>();
+                AssetDatabase.CreateAsset(def, path);
+            }
+            def.id = "robot";
+            def.displayName = "6축 로봇 웨이퍼 이송";
+            def.description = "FOUP와 챔버 사이에서 웨이퍼를 이송한다.";
+            // 로봇은 씬(DigitalTwin.unity) 기반 → 셸은 씬 additive 로드로 RobotStation 접근. controlPrefab 미사용.
+            EditorUtility.SetDirty(def);
+            AssetDatabase.SaveAssets();
+            return def;
         }
 
         /// <summary>URP 프로젝트 대응: URP/Lit 우선, 없으면 Standard. 광택(smoothness)·메탈릭 지원.</summary>
