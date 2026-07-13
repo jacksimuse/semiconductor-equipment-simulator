@@ -11,6 +11,7 @@ namespace Onboarding
         public EngineerPlayerController player;
         public StationRegistry stationRegistry;
         public StationDefinition defaultStation;
+        public StationLearningProfile defaultLearningProfile;
         public TrainingCameraFollow cameraFollow;
         public Transform equipmentFocusTarget;
 
@@ -21,19 +22,40 @@ namespace Onboarding
         public bool IsInStationMode { get; private set; }
         public bool PracticeStarted { get; private set; }
 
-        Rect window = new Rect(18, 18, 420, 0);
+        Rect window = new Rect(16, 16, 680, 300);
+        bool showWindow = true;
+        GUIStyle stationLabelStyle;
+        GUIStyle stationButtonStyle;
         StationBase activeStation;
         StationDefinition activeDefinition;
+        StationInteractionPoint focusedPoint;
+        StationLearningProfile activeLearningProfile;
+        float missionStartTime = -1f;
 
         void Awake()
         {
-            if (player == null) player = FindFirstObjectByType<EngineerPlayerController>();
+            if (player == null) player = FindAnyObjectByType<EngineerPlayerController>();
             if (cameraFollow == null && Camera.main != null)
                 cameraFollow = Camera.main.GetComponent<TrainingCameraFollow>();
         }
 
         void Update()
         {
+            if (ReadCameraCycleDown() && cameraFollow != null && !IsInStationMode)
+                cameraFollow.CyclePlayerCamera();
+
+            if (IsInStationMode && ReadReturnToPlayerDown())
+            {
+                ExitActiveStation();
+                return;
+            }
+
+            if (!IsInStationMode && focusedPoint != null && ReadEnterStationDown())
+            {
+                EnterStation(focusedPoint.definition, focusedPoint.learningProfile);
+                return;
+            }
+
             if (!allowStationPanelToggle || activeStation == null) return;
             if (!ReadEquipmentToggleDown()) return;
 
@@ -43,10 +65,21 @@ namespace Onboarding
 
         public void EnterTrainingRoom()
         {
-            EnterStation(defaultStation != null ? defaultStation : FirstStation());
+            EnterStation(defaultStation != null ? defaultStation : FirstStation(), defaultLearningProfile);
         }
 
-        public void EnterStation(StationDefinition definition)
+        public void FocusStation(StationInteractionPoint point)
+        {
+            if (point == null || point.definition == null || IsInStationMode) return;
+            focusedPoint = point;
+        }
+
+        public void ClearFocusedStation(StationInteractionPoint point)
+        {
+            if (focusedPoint == point) focusedPoint = null;
+        }
+
+        public void EnterStation(StationDefinition definition, StationLearningProfile learningProfile = null)
         {
             if (definition == null) return;
             if (IsInStationMode && activeDefinition == definition) return;
@@ -54,11 +87,13 @@ namespace Onboarding
             ExitActiveStation();
 
             activeDefinition = definition;
+            activeLearningProfile = learningProfile;
             activeStation = CreateStation(definition);
             if (activeStation == null) return;
 
             IsInStationMode = true;
             PracticeStarted = false;
+            missionStartTime = -1f;
             activeStation.Enter();
             FocusEquipmentMode(activeStation.transform);
         }
@@ -73,7 +108,16 @@ namespace Onboarding
 
             activeStation = null;
             activeDefinition = null;
+            activeLearningProfile = null;
+            missionStartTime = -1f;
             IsInStationMode = false;
+
+            if (player != null)
+            {
+                player.enabled = true;
+                if (cameraFollow != null)
+                    cameraFollow.FollowPlayer(player.transform);
+            }
         }
 
         StationBase CreateStation(StationDefinition definition)
@@ -106,18 +150,44 @@ namespace Onboarding
 
         void OnGUI()
         {
+            EnsureGuiStyles();
+            if (!showWindow)
+            {
+                if (GUI.Button(new Rect(18f, 18f, 100f, 50f), "가이드", stationButtonStyle))
+                    showWindow = true;
+                return;
+            }
+
             window = GUILayout.Window(62010, window, DrawWindow, "JSM 온보딩 스테이션");
         }
 
         void DrawWindow(int id)
         {
-            GUILayout.Label($"{traineeName} 온보딩");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"{traineeName} 온보딩", stationLabelStyle);
+            if (GUILayout.Button("닫기", stationButtonStyle, GUILayout.Width(86f), GUILayout.Height(43f)))
+            {
+                showWindow = false;
+                GUI.DragWindow();
+                GUILayout.EndHorizontal();
+                return;
+            }
+            GUILayout.EndHorizontal();
             GUILayout.Space(4);
 
             if (!IsInStationMode)
             {
-                GUILayout.Label("목표: 방향키/WASD로 이동해 장비 구역으로 들어가세요.");
-                GUILayout.Label("장비 구역에 들어가면 Station 계약 기반 제어 모드로 전환됩니다.");
+                GUILayout.Label("목표: 방향키/WASD로 장비 키오스크 앞까지 이동하세요.", stationLabelStyle);
+                if (focusedPoint != null && focusedPoint.definition != null)
+                {
+                    GUILayout.Space(4);
+                    GUILayout.Label($"{focusedPoint.definition.displayName} 앞에 있습니다.", stationLabelStyle);
+                    GUILayout.Label("E: 장비 제어 모드 진입", stationLabelStyle);
+                }
+                else
+                {
+                    GUILayout.Label("장비 앞에 서면 진입 안내가 표시됩니다.", stationLabelStyle);
+                }
             }
             else
             {
@@ -126,9 +196,26 @@ namespace Onboarding
 
             GUILayout.Space(4);
             GUILayout.Label(IsInStationMode
-                ? "현재 모드: 장비 포커스"
-                : "조작: WASD/방향키 이동");
+                ? "현재 모드: 장비 포커스 | Esc/Backspace: 캐릭터 조작 복귀"
+                : "조작: WASD/방향키 이동 | C: 카메라 전환", stationLabelStyle);
             GUI.DragWindow();
+        }
+
+        void EnsureGuiStyles()
+        {
+            if (stationLabelStyle != null) return;
+
+            stationLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 25,
+                wordWrap = true,
+                normal = { textColor = Color.white }
+            };
+            stationButtonStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 25,
+                fontStyle = FontStyle.Bold
+            };
         }
 
         void DrawStationPanel()
@@ -142,6 +229,7 @@ namespace Onboarding
             GUILayout.Label($"{activeDefinition.displayName} 제어 모드");
             if (!string.IsNullOrWhiteSpace(activeDefinition.description))
                 GUILayout.Label(activeDefinition.description);
+            DrawLearningProfile();
 
             StationStatus status = activeStation.GetStatus();
             GUILayout.Label($"상태: {status.text}");
@@ -153,25 +241,55 @@ namespace Onboarding
             GUILayout.Space(4);
             DrawCommandButtons();
             GUILayout.Label("- Tab: 장비 제어 활성/비활성");
+            GUILayout.Label("- Esc/Backspace: 캐릭터 조작 모드 복귀");
             GUILayout.Space(4);
 
             GUI.enabled = !status.busy && !status.eStop && !status.fault;
             if (!PracticeStarted)
             {
-                if (GUILayout.Button("첫 미션 시작"))
+                string missionTitle = CurrentMission() != null ? CurrentMission().title : "첫 미션";
+                if (GUILayout.Button($"{missionTitle} 시작"))
                 {
                     PracticeStarted = true;
+                    missionStartTime = Time.time;
                     StartDefaultMissionCommand();
                 }
-                GUILayout.Label("□ 첫 미션 실행");
+                GUILayout.Label("첫 미션 실행");
             }
             else
             {
                 if (GUILayout.Button("미션 다시 실행"))
+                {
+                    missionStartTime = Time.time;
                     StartDefaultMissionCommand();
+                }
                 GUILayout.Label(status.progress >= 1f ? "■ 미션 완료" : "□ 미션 진행 중");
+                DrawMissionResult(status);
             }
             GUI.enabled = true;
+        }
+
+        void DrawLearningProfile()
+        {
+            if (activeLearningProfile == null) return;
+
+            GUILayout.Space(4);
+            GUILayout.Label(activeLearningProfile.chapterTitle);
+            if (!string.IsNullOrWhiteSpace(activeLearningProfile.roleInFab))
+                GUILayout.Label(activeLearningProfile.roleInFab);
+            if (!string.IsNullOrWhiteSpace(activeLearningProfile.lessonGoal))
+                GUILayout.Label(activeLearningProfile.lessonGoal);
+            if (!string.IsNullOrWhiteSpace(activeLearningProfile.safetyNote))
+                GUILayout.Label($"안전: {activeLearningProfile.safetyNote}");
+
+            var mission = CurrentMission();
+            if (mission != null)
+            {
+                GUILayout.Space(4);
+                GUILayout.Label($"미션: {mission.title}");
+                if (!string.IsNullOrWhiteSpace(mission.briefing)) GUILayout.Label(mission.briefing);
+                if (!string.IsNullOrWhiteSpace(mission.successCriteria)) GUILayout.Label(mission.successCriteria);
+            }
         }
 
         void DrawCommandButtons()
@@ -206,10 +324,40 @@ namespace Onboarding
         {
             if (activeStation == null || activeDefinition == null) return;
 
-            if (activeDefinition.id == "aligner")
-                activeStation.Command("Align");
-            else
-                activeStation.Command("StartCycle");
+            var mission = CurrentMission();
+            if (mission != null && !string.IsNullOrWhiteSpace(mission.startCommand))
+            {
+                activeStation.Command(mission.startCommand);
+                return;
+            }
+
+            activeStation.Command(activeDefinition.id == "aligner" ? "Align" : "StartCycle");
+        }
+
+        MissionDefinition CurrentMission()
+        {
+            return activeLearningProfile != null ? activeLearningProfile.FirstMission : null;
+        }
+
+        void DrawMissionResult(StationStatus status)
+        {
+            var mission = CurrentMission();
+            if (mission == null) return;
+
+            if (status.progress >= mission.targetProgress)
+            {
+                if (!string.IsNullOrWhiteSpace(mission.successFeedback))
+                    GUILayout.Label(mission.successFeedback);
+                return;
+            }
+
+            if (missionStartTime > 0f && mission.timeLimitSeconds > 0f)
+            {
+                float remain = mission.timeLimitSeconds - (Time.time - missionStartTime);
+                GUILayout.Label($"남은 시간: {Mathf.Max(0f, remain):F0}s");
+                if (remain <= 0f && !string.IsNullOrWhiteSpace(mission.failureFeedback))
+                    GUILayout.Label(mission.failureFeedback);
+            }
         }
 
         static bool ReadEquipmentToggleDown()
@@ -219,6 +367,37 @@ namespace Onboarding
             return keyboard != null && keyboard.tabKey.wasPressedThisFrame;
 #else
             return Input.GetKeyDown(KeyCode.Tab);
+#endif
+        }
+
+        static bool ReadEnterStationDown()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = Keyboard.current;
+            return keyboard != null && keyboard.eKey.wasPressedThisFrame;
+#else
+            return Input.GetKeyDown(KeyCode.E);
+#endif
+        }
+
+        static bool ReadReturnToPlayerDown()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = Keyboard.current;
+            return keyboard != null &&
+                   (keyboard.escapeKey.wasPressedThisFrame || keyboard.backspaceKey.wasPressedThisFrame);
+#else
+            return Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Backspace);
+#endif
+        }
+
+        static bool ReadCameraCycleDown()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var keyboard = Keyboard.current;
+            return keyboard != null && keyboard.cKey.wasPressedThisFrame;
+#else
+            return Input.GetKeyDown(KeyCode.C);
 #endif
         }
     }

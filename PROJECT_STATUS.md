@@ -2,7 +2,7 @@
 
 > 두 에이전트가 번갈아 작업할 때 **받는 쪽이 먼저 읽는 문서.**
 > 작업을 넘길 때마다 이 문서를 갱신한다. 상세 규칙은 [UNITY_MCP_GUIDE.md](UNITY_MCP_GUIDE.md).
-> 최종 갱신: 2026-07-13 (Claude)
+> 최종 갱신: 2026-07-13 (Codex)
 
 ---
 
@@ -29,6 +29,42 @@
 ### E-트랙 — 세계관 (Codex, `Assets/Onboarding/**`, `Onboarding.unity`)
 - `WORLD_BUILDING_PLAN.md` 기준. JSM Semiconductor Equipment 세계관, 챕터 0~7, NPC, 시설 맵.
 - 온보딩 전용 씬 `Assets/Scenes/Onboarding.unity` 사용.
+- `OnboardingTrainingArea`는 `DigitalTwin.unity`에서 분리되어 `Onboarding.unity`에만 존재함.
+- 신입 엔지니어가 방향키/WASD로 키오스크 앞까지 이동한 뒤 `E`로 장비 제어 모드에 진입하는 흐름으로 변경됨.
+- 장비 포커스 모드에서 `Esc` 또는 `Backspace`로 캐릭터 조작 모드에 복귀 가능.
+- 탐색 모드에서 `C`로 카메라 시점 전환 가능.
+- 키오스크 본체 콜라이더는 물리 차단용 Solid, 주변 감지 영역은 별도 Trigger 자식 오브젝트로 분리.
+- 얼라이너 교육 데이터 추가: `StationLearningProfile` + `MissionDefinition` (`Assets/Onboarding/Content/`).
+- 장비 제어는 `StationBase.Enter/Exit/GetStatus/Command` 계약으로만 호출함. 현재 얼라이너 미션은 `Command("Align")` 사용.
+- 시설 구현 확장:
+  - Lobby, Gowning Area, Training Cleanroom, Robot Transfer Lab, Control Room, Maintenance Bay, Twin Operations Room, Customer Demo Hall.
+  - 전체 안전 바닥(`FacilitySafetyFloor`) 추가로 바닥 밖 이동 시 추락하지 않도록 처리.
+  - 구역별 가이드 패널, 바닥 동선, 구역 외곽선, 주요 설비 목업 배치.
+- 미션/가이드 HUD 추가:
+  - 하단 안내에서 중앙 대화창 형태로 확대 변경.
+  - `다음`/`이전` 페이지 버튼, `요약`/`상세` 전환, `확인`/`닫기` 버튼.
+  - 우상단 `알림` 버튼으로 현재 진행 중인 미션 확인.
+  - 알림 패널은 스크롤로 긴 미션 내용을 볼 수 있음.
+  - 같은 구역에 반복 진입할 때 미션 페이지/텍스트가 계속 초기화되어 깜빡이는 현상을 방지.
+- 캐릭터 이미지 적용:
+  - `Assets/플레이어.png`
+  - `Assets/한서윤.png`
+  - `Assets/박도현.png`
+  - `Assets/이지훈.png`
+  - `Assets/최민아.png`
+  - `Assets/김태준.png`
+  - `FacilityGuideHud` 왼쪽 캐릭터 영역에 PNG 표시.
+  - 현재 미션 구역에 따라 담당 캐릭터 자동 전환:
+    - 기본 안내: 한서윤 매니저
+    - Robot Transfer Lab: 박도현 책임
+    - Control Room / Twin Operations Room: 이지훈 선임
+    - Training Cleanroom / Maintenance Bay: 최민아 책임
+    - Customer Demo Hall: 김태준 매니저
+- `OnboardingBuilder`는 씬을 다시 빌드할 때 위 캐릭터 이미지를 자동 참조함.
+- `FacilityGuideHud`는 씬 참조가 비어 있어도 Editor Play에서 `Assets/*.png`를 fallback 로딩함.
+- 최근 Unity 검증:
+  - 이전 단계에서 `Onboarding.unity` 씬 검증 통과 및 Play 진입 후 콘솔 error/warning 0개 확인.
+  - 캐릭터 이미지 표시/깜빡임 방지 변경 이후에는 아직 Play 검증 전.
 
 ---
 
@@ -38,13 +74,26 @@
    `Command`: StartCycle/StopCycle/ResetEStop/Home. `GetStatus`: busy=IsRunning, eStop=SafetyMonitor.EStop, text=Status, lastEvent=SafetyMonitor.LastEvent.
    → Codex의 M3 수직 슬라이스(걸어가서 로봇 제어) / Chapter 2 를 열어줌.
 2. 신규 장비: **로드포트/FOUP → 식각 챔버 → CMP → 계측기** (각 `Stations/<장비>/` 자체완결 모듈 + 어댑터).
+3. Claude가 Play 검증할 때 확인할 항목:
+   - Onboarding 씬에서 HUD 텍스트 깜빡임이 사라졌는지.
+   - 미션 팝업 왼쪽에 캐릭터 이미지가 표시되는지.
+   - `E`로 장비 제어 모드 진입, `Esc`/`Backspace`로 캐릭터 조작 복귀가 유지되는지.
+   - 키오스크 본체 통과가 막히고 Trigger 영역에서만 상호작용 안내가 뜨는지.
 
 ## 다음 (Codex)
-- StationDefinition/MissionDefinition 교육 문구, 챕터 흐름, 온보딩 씬 구성.
+- StationDefinition/MissionDefinition 교육 문구, 챕터 흐름, 온보딩 씬 구성 계속 확장.
+- RobotStation 어댑터가 들어오면 Chapter 2 로봇 이송 미션용 `StationLearningProfile`/`MissionDefinition` 추가.
 - 장비는 계약 API(`Enter/Exit/GetStatus/Command`)로만 호출. 새 verb/필드 필요 시 Claude에 요청.
+- 다음 세계관 작업 후보:
+  - 각 NPC별 대사 세트 분리.
+  - 미션별 담당자/초상화/요약/상세 안내를 ScriptableObject 데이터로 이동.
+  - 고객 데모 평가 루브릭 추가.
 
 ---
 
 ## 알려진 이슈 / 주의
-- `Assets/Scenes/DigitalTwin.unity`에 예전 `OnboardingTrainingArea`가 남아 있을 수 있음(Onboarding.unity로 이관됐으면 중복). 제거는 Claude가 확인 후 처리 예정.
+- `Assets/Scenes/DigitalTwin.unity`의 예전 `OnboardingTrainingArea` 중복 이슈는 처리됨. 현재 `OnboardingTrainingArea`는 `Assets/Scenes/Onboarding.unity`에만 있음.
 - 동시 작업 중 `.cs` 저장 → 재컴파일 → 상대 Play 종료됨. 번갈아 사용 원칙 준수.
+- Codex 작업 범위는 계속 `Assets/Onboarding/**`, `Assets/Scenes/Onboarding.unity`, 세계관/문서 중심.
+- Claude 작업 범위는 계속 `Assets/DigitalTwin/**`, 장비/로봇/통신/Station 구현 중심.
+- `Assets/DigitalTwin/StationContract/**` 계약은 직접 수정하지 말 것. 새 상태 필드/verb가 필요하면 Claude가 계약 확장 여부를 판단.
