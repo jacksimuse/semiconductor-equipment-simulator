@@ -21,14 +21,16 @@ namespace DigitalTwin
         RobotIK ik;
         RobotTeach teach;
         WaferScenario scenario;
+        SafetyMonitor safety;
         Rect win = new Rect(12, 12, 360, 0);
         int windowId;
 
         void Awake()
         {
-            robot = GetComponent<SixAxisRobot>();
-            ik    = GetComponent<RobotIK>();
-            teach = GetComponent<RobotTeach>();
+            robot  = GetComponent<SixAxisRobot>();
+            ik     = GetComponent<RobotIK>();
+            teach  = GetComponent<RobotTeach>();
+            safety = GetComponent<SafetyMonitor>();
             windowId = nextWindowId++;
         }
 
@@ -48,6 +50,8 @@ namespace DigitalTwin
             // hold 버튼 증분은 프레임당 1회만 적용 (OnGUI 는 Layout+Repaint 로 매 프레임 2회 호출됨).
             bool  repaint = Event.current.type == EventType.Repaint;
             float step    = jogSpeed * Time.deltaTime;
+
+            if (safety != null) DrawSafety();
 
             for (int i = 0; i < robot.joints.Length; i++)
             {
@@ -138,6 +142,27 @@ namespace DigitalTwin
             if (GUILayout.Button("저장(디스크)"))   teach.SaveToDisk();
             if (GUILayout.Button("불러오기"))        teach.LoadFromDisk();
             GUILayout.EndHorizontal();
+        }
+
+        void DrawSafety()
+        {
+            if (safety.EStop)
+            {
+                var prev = GUI.color;
+                GUI.color = new Color(1f, 0.55f, 0.55f);
+                GUILayout.Label($"⛔ E-STOP — 충돌!  {safety.LastEvent}");
+                GUI.color = prev;
+                if (GUILayout.Button("E-STOP 해제 (Reset)"))
+                {
+                    safety.ResetEStop();
+                    if (ik != null) ik.follow = false;   // 재발동 방지: 벽에서 물러난 뒤 재개
+                }
+                GUILayout.Space(4);
+            }
+            else
+            {
+                GUILayout.Label("안전: 정상 (충돌 감지 활성)");
+            }
         }
 
         void DrawScenario()

@@ -76,6 +76,13 @@ namespace DigitalTwin
             root.AddComponent<RobotTeach>();   // Phase 3 — 티칭 & 재생
             root.AddComponent<RobotJogUI>();
 
+            // Phase 6 — 충돌 인터락(E-stop). 로봇 링크 vs Obstacle 레이어 관통 감지.
+            var safety = root.AddComponent<SafetyMonitor>();
+            safety.robot = robot;
+            safety.ik    = ik;
+            int obLayer  = LayerMask.NameToLayer("Obstacle");
+            safety.obstacleMask = obLayer >= 0 ? (1 << obLayer) : 0;
+
             Selection.activeGameObject = root;
             EditorSceneManager.MarkSceneDirty(root.scene);
             Debug.Log("[DigitalTwin] 6축 로봇 생성 완료. ▶ Play 를 누르면 좌상단에 조그 UI 가 나타납니다.");
@@ -100,6 +107,10 @@ namespace DigitalTwin
             scen.robot = robot;
             scen.ik    = robot.GetComponent<RobotIK>();
 
+            // 안전 인터락에 시나리오 연결(충돌 시 사이클 정지).
+            var safety = robot.GetComponent<SafetyMonitor>();
+            if (safety != null) safety.scenario = scen;
+
             const int   N   = 5;
             const float y0  = 0.45f;   // 최하단 슬롯 높이
             const float dy  = 0.09f;   // 슬롯 간격
@@ -111,7 +122,9 @@ namespace DigitalTwin
             foup.SetParent(root.transform, false);
             var housing = GameObject.CreatePrimitive(PrimitiveType.Cube);
             housing.name = "Housing";
-            Object.DestroyImmediate(housing.GetComponent<Collider>());
+            // 웨이퍼가 꽂힌 벽 = 충돌 장애물. 기본 BoxCollider 유지 + Obstacle 레이어.
+            int obLayer = LayerMask.NameToLayer("Obstacle");
+            if (obLayer >= 0) housing.layer = obLayer;
             housing.transform.SetParent(foup, true);
             housing.transform.position   = new Vector3(slotBase.x + 0.10f, y0 + dy * (N - 1) * 0.5f, slotBase.z);
             housing.transform.localScale  = new Vector3(0.06f, dy * N + 0.06f, 0.30f);
@@ -185,7 +198,7 @@ namespace DigitalTwin
             float jr = Mathf.Max(parentR, linkR);
             CreateJointHousing(pivot, axis, jr * 1.10f, jr * 3.0f, JointColor); // 모터 배럴(축 방향)
             CreateSphere("Knuckle", pivot, jr * 1.18f, col);                    // 관절 구(회전 틈 메움)
-            CreateCylinder("Link", pivot, linkLen, linkR, col);                 // +Y 로 뻗는 링크
+            CreateCylinder("Link", pivot, linkLen, linkR, col, collider: true); // +Y 로 뻗는 링크(충돌 콜라이더 부착)
 
             parent = pivot; // 다음 관절은 이 pivot 의 자식이 된다
             return new SixAxisRobot.Joint
@@ -226,19 +239,30 @@ namespace DigitalTwin
             return go;
         }
 
-        /// <summary>+Y 방향으로 length 만큼 뻗는 실린더(콜라이더 제거) 생성.</summary>
-        static GameObject CreateCylinder(string name, Transform parent, float length, float radius, Color col)
+        /// <summary>+Y 방향으로 length 만큼 뻗는 실린더 생성. collider=true 면 링크 충돌용 CapsuleCollider 부착.</summary>
+        static GameObject CreateCylinder(string name, Transform parent, float length, float radius, Color col, bool collider = false)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             go.name = name;
             var col0 = go.GetComponent<Collider>();
-            if (col0) Object.DestroyImmediate(col0); // Phase 0-1 은 순수 kinematic
+            if (col0) Object.DestroyImmediate(col0); // 기본(메시) 콜라이더 제거
 
             go.transform.SetParent(parent, false);
             // 유니티 기본 실린더는 Y로 2unit(±1). scale.y = length/2 → 높이 length.
             go.transform.localScale    = new Vector3(radius * 2f, length * 0.5f, radius * 2f);
             go.transform.localPosition = new Vector3(0f, length * 0.5f, 0f);
             go.GetComponent<MeshRenderer>().sharedMaterial = MakeMat(col);
+
+            if (collider)
+            {
+                // 링크 메시(높이 2, 반경 0.5)에 맞춘 캡슐. 로컬 스케일이 실제 치수로 변환됨.
+                // CapsuleCollider 는 볼록(convex) → Physics.ComputePenetration 에 안전.
+                var cap = go.AddComponent<CapsuleCollider>();
+                cap.direction = 1;      // Y축
+                cap.height    = 2f;
+                cap.radius    = 0.5f;
+                cap.center    = Vector3.zero;
+            }
             return go;
         }
 
