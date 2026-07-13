@@ -29,6 +29,10 @@
 - 샘플 Unity 씬
 - 시뮬레이터 기획 및 로드맵 문서
 
+## 실행 화면
+
+![반도체 장비 디지털 트윈 시뮬레이터 실행 화면](Assets/Screenshots/screenshot-20260713-095217.png)
+
 ## 실행 환경
 
 - Unity `6000.5.3f1`
@@ -58,6 +62,13 @@ Unity가 자동 생성하는 `Library`, `Temp`, `Logs`, `UserSettings` 폴더는
 
 ```text
 HANDOFF.md
+```
+
+교육 및 납품 준비 문서는 아래 파일을 참고하세요.
+
+```text
+docs/delivery-package.md
+docs/training-plan.md
 ```
 
 ## 교육 및 납품 활용 방향

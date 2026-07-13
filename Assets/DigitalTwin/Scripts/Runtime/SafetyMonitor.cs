@@ -55,10 +55,13 @@ namespace DigitalTwin
                     obstacleCols.Add(c);
         }
 
-        void Update()
+        void Update() => CheckNow();
+
+        /// <summary>충돌을 1회 검사. 관통 발견 시 E-stop 발동하고 true 반환. (Update + 외부 검증에서 호출)</summary>
+        public bool CheckNow()
         {
-            if (EStop) return;
-            if (robotCols.Count == 0 || obstacleCols.Count == 0) return;
+            if (EStop) return true;
+            if (robotCols.Count == 0 || obstacleCols.Count == 0) return false;
 
             // 수동으로 Transform 을 움직이므로 질의 전에 물리 좌표를 동기화.
             Physics.SyncTransforms();
@@ -78,12 +81,12 @@ namespace DigitalTwin
                             out _, out float dist)
                         && dist > penetrationTol)
                     {
-                        string what = $"{a.transform.parent?.name}/{a.name} ↔ {b.name} (침투 {dist * 1000f:F1}mm)";
-                        Trigger(what);
-                        return;
+                        Trigger($"{a.transform.parent?.name}/{a.name} ↔ {b.name} (침투 {dist * 1000f:F1}mm)");
+                        return true;
                     }
                 }
             }
+            return false;
         }
 
         void Trigger(string what)
